@@ -1,31 +1,63 @@
 import { useCallback, useState } from "react";
 
 // Midnight wallet extensions inject themselves under window.midnight.
-// 1AM wallet uses window.midnight['1am'] or window.midnight.oneam.
-// Lace wallet uses window.midnight.mnLace.
+// 1AM wallet uses the Midnight DApp Connector API:
+//   window.midnight['1am'] → { apiVersion, enable(networkId) → ConnectedAPI }
+// Lace wallet uses a simpler API:
+//   window.midnight.mnLace → { enable() → { address } }
 // See: https://docs.midnight.network — "Connect a wallet"
 declare global {
   interface Window {
-    midnight?: Record<
-      string,
-      | {
-          enable: () => Promise<{ address: string }>;
-          isEnabled: () => Promise<boolean>;
-        }
-      | undefined
-    >;
+    midnight?: Record<string, MidnightWalletAdapter | undefined>;
   }
 }
 
-/** Returns the first available Midnight wallet adapter, preferring 1AM. */
-function getWalletAdapter() {
+/** Union of both wallet API shapes we may encounter. */
+type MidnightWalletAdapter =
+  | {
+      // Midnight DApp Connector API (1AM wallet)
+      apiVersion: string;
+      enable: (networkId: string) => Promise<ConnectedAPI>;
+      isEnabled?: () => Promise<boolean>;
+    }
+  | {
+      // Legacy Lace API
+      enable: () => Promise<{ address: string }>;
+      isEnabled?: () => Promise<boolean>;
+      apiVersion?: never;
+    };
+
+/** Subset of the ConnectedAPI returned by the 1AM DApp Connector. */
+interface ConnectedAPI {
+  getConnectionStatus?: () => Promise<unknown>;
+  address?: string;
+  changeAddress?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Scans window.midnight for the best available wallet adapter.
+ * Prefers any adapter that exposes `apiVersion` (DApp Connector API / 1AM),
+ * then falls back to the plain Lace adapter (mnLace).
+ */
+function getWalletAdapter(): MidnightWalletAdapter | undefined {
   const m = window.midnight;
   if (!m) return undefined;
-  // 1AM wallet (prefer)
-  const oneam = m["1am"] ?? m["oneam"];
-  if (oneam) return oneam;
-  // Lace wallet (fallback)
+
+  // Prefer DApp Connector API wallets (1AM, future wallets) — they expose apiVersion
+  const dappConnector = Object.values(m).find(
+    (w) => w && typeof w === "object" && "apiVersion" in w
+  );
+  if (dappConnector) return dappConnector;
+
+  // Fallback: legacy Lace API
   return m["mnLace"];
+}
+
+function isDappConnector(
+  w: MidnightWalletAdapter
+): w is Extract<MidnightWalletAdapter, { apiVersion: string }> {
+  return "apiVersion" in w && typeof w.apiVersion === "string";
 }
 
 export type WalletStatus = "disconnected" | "connecting" | "connected" | "unavailable" | "error";
@@ -38,15 +70,35 @@ export function useLaceWallet() {
   const connect = useCallback(async () => {
     setError(null);
     const wallet = getWalletAdapter();
+
     if (!wallet) {
       setStatus("unavailable");
-      setError("No Midnight wallet extension detected. Please install 1AM or Lace and reload.");
+      setError(
+        "No Midnight wallet detected. Please install the 1AM extension, configure it for Preprod, and reload."
+      );
       return;
     }
+
     try {
       setStatus("connecting");
-      const { address } = await wallet.enable();
-      setAddress(address);
+
+      if (isDappConnector(wallet)) {
+        // 1AM / DApp Connector API — enable() requires a networkId
+        const connectedAPI = await wallet.enable("preprod");
+        // ConnectedAPI doesn't have a plain address field — just mark as connected
+        const addr =
+          typeof connectedAPI === "object" && connectedAPI !== null
+            ? ((connectedAPI as ConnectedAPI).address ??
+              (connectedAPI as ConnectedAPI).changeAddress ??
+              null)
+            : null;
+        setAddress(addr ?? "connected");
+      } else {
+        // Legacy Lace API — enable() returns { address }
+        const result = await (wallet as { enable: () => Promise<{ address: string }> }).enable();
+        setAddress(result.address);
+      }
+
       setStatus("connected");
     } catch (e) {
       setStatus("error");

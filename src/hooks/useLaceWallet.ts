@@ -44,14 +44,25 @@ function getWalletAdapter(): MidnightWalletAdapter | undefined {
   const m = window.midnight;
   if (!m) return undefined;
 
+  // Debug: log entire window.midnight structure so we can inspect 1AM's shape
+  console.log("[Quorum] window.midnight keys:", Object.keys(m));
+  Object.entries(m).forEach(([key, val]) => {
+    console.log(`[Quorum] window.midnight['${key}']:`, val, "keys:", val ? Object.keys(val) : "N/A");
+  });
+
   // Prefer DApp Connector API wallets (1AM, future wallets) — they expose apiVersion
   const dappConnector = Object.values(m).find(
     (w) => w && typeof w === "object" && "apiVersion" in w
   );
-  if (dappConnector) return dappConnector;
+  if (dappConnector) {
+    console.log("[Quorum] Using DApp Connector wallet:", dappConnector);
+    return dappConnector;
+  }
 
   // Fallback: legacy Lace API
-  return m["mnLace"];
+  const lace = m["mnLace"];
+  if (lace) console.log("[Quorum] Using Lace wallet:", lace);
+  return lace;
 }
 
 function isDappConnector(

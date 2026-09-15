@@ -14,7 +14,7 @@ if (typeof window !== "undefined") {
 }
 
 // Configure Midnight Network ID
-setNetworkId("TestNet");
+setNetworkId("preprod");
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

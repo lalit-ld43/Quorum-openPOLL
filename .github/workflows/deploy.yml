@@ -72,19 +72,19 @@ jobs:
           sudo swapon /swapfile_extra
           free -h
 
-      - name: Deploy Contract
-        run: |
-          cd preprod-deployment/cli
-          npx tsx src/launcher/deploy-voting.ts
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192 --expose-gc"
-          WALLET_SEED: "b13ef2c445dd8c7c5f5586a2b1f18b6135d7acc340a749e69d5b456ff935614"
+      # - name: Deploy Contract
+      #   run: |
+      #     cd preprod-deployment/cli
+      #     npx tsx src/launcher/deploy-voting.ts
+      #   env:
+      #     NODE_OPTIONS: "--max-old-space-size=8192 --expose-gc"
+      #     WALLET_SEED: "b13ef2c445dd8c7c5f5586a2b1f18b6135d7acc340a749e69d5b456ff935614"
 
-      - name: Upload Deployment Info
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment-info
-          path: |
-            preprod-deployment/cli/deployment.json
-            deployed_contract.json
+      # - name: Upload Deployment Info
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: deployment-info
+      #     path: |
+      #       preprod-deployment/cli/deployment.json
+      #       deployed_contract.json

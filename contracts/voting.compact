@@ -55,7 +55,7 @@ export circuit createPoll(
   eligibilityRoot = root;
   isOpen = true;
   totalBallots = default<Counter>;
-  for (const i in 0..4) {
+  for (const i of 0..4) {
     if (i < (numOptions as Uint<32>)) {
       tallies.insert(i as Uint<8>, default<Counter>);
     }

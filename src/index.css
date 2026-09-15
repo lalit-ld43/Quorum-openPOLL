@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #16261F;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle laid-paper texture for parchment surfaces, no external asset */
+.paper-grain {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(22, 38, 31, 0.035) 0px,
+      rgba(22, 38, 31, 0.035) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+}
+
+/* Perforated tear edge between the ballot stub and the receipt */
+.tear-edge {
+  background-image: radial-gradient(circle, #16261F 2.5px, transparent 2.6px);
+  background-size: 14px 14px;
+  background-position: center;
+}
+
+*:focus-visible {
+  outline: 2px solid #C15A3F;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

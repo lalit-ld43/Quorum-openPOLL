@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 import { useState, useEffect } from "react";
 import { type VotingDerivedState, type DeployedVotingAPI, VotingAPI, type VotingProviders, type VotingCircuitKeys } from "@midnight-ntwrk/voting-api";
+import { type VotingPrivateState } from "@midnight-ntwrk/voting-contract";
+import { inMemoryPrivateStateProvider } from "../lib/in-memory-private-state-provider";
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
@@ -56,24 +58,7 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
         const shieldedAddresses = await api.getShieldedAddresses();
 
         setInitStep("Setting up providers...");
-        // Very basic in-memory private state provider for this session
-        const store = new Map<string, string>();
-        const privateStateProvider = {
-          get: async (key: string) => {
-            const data = store.get(key);
-            return data ? JSON.parse(data) : null;
-          },
-          set: async (key: string, value: unknown) => {
-            store.set(key, JSON.stringify(value));
-          },
-          setContractAddress: () => {},
-          remove: async (key: string) => {
-            store.delete(key);
-          },
-          clear: async () => {
-            store.clear();
-          },
-        } as unknown as VotingProviders["privateStateProvider"];
+        const privateStateProvider = inMemoryPrivateStateProvider<string, VotingPrivateState>();
 
         const providers: VotingProviders = {
           privateStateProvider,

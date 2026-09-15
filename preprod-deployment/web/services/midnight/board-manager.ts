@@ -42,7 +42,10 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
     if (contractAddress) {
       void this.joinDeployment(deployment, contractAddress);
     } else {
-      deployment.next({ status: 'failed', error: new Error("Voting deployment not supported from UI. Please deploy via CLI.") });
+      deployment.next({
+        status: 'failed',
+        error: new Error('Voting deployment not supported from UI. Please deploy via CLI.'),
+      });
     }
 
     this.#boardDeploymentsSubject.next([...deployments, deployment]);
@@ -67,4 +70,3 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
     }
   }
 }
-

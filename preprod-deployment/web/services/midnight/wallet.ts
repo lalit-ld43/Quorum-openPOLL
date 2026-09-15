@@ -13,10 +13,10 @@ import {
 /** Finds the first browser-injected wallet whose connector API is compatible with this app. */
 const getFirstCompatibleWallet = (): InitialAPI | undefined => {
   if (typeof window === 'undefined' || !window.midnight) return undefined;
-  
+
   // Look for 1AM wallet specifically
   const oneamWallet = window.midnight['1am'] || window.midnight.oneam;
-  
+
   if (
     oneamWallet &&
     typeof oneamWallet === 'object' &&
@@ -61,7 +61,9 @@ export const connectToWallet = (logger: Logger, networkId: string): Promise<Conn
         with: () =>
           throwError(() => {
             logger.error('Could not find wallet connector API');
-            return new Error('Could not find the 1AM wallet extension. Please install and enable it, then reload the page.');
+            return new Error(
+              'Could not find the 1AM wallet extension. Please install and enable it, then reload the page.',
+            );
           }),
       }),
       concatMap(async (initialAPI) => {
@@ -75,7 +77,9 @@ export const connectToWallet = (logger: Logger, networkId: string): Promise<Conn
         with: () =>
           throwError(() => {
             logger.error('Wallet connector API failed to respond');
-            return new Error('The 1AM wallet extension failed to respond. Make sure it is enabled and configured for Preprod.');
+            return new Error(
+              'The 1AM wallet extension failed to respond. Make sure it is enabled and configured for Preprod.',
+            );
           }),
       }),
       catchError((error, apis) =>

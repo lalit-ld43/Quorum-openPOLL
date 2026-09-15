@@ -122,7 +122,29 @@ async function main() {
   console.log(`DUST available: ${dustBalance}! Deploying contract...`);
 
   console.log("Initializing providers...");
-  const zkConfigProvider = new NodeZkConfigProvider(config.zkConfigPath);
+  let zkConfigPath = config.zkConfigPath;
+  console.log(`Initial zkConfigPath: ${zkConfigPath}`);
+  if (!fs.existsSync(zkConfigPath)) {
+    const candidates = [
+      path.resolve(process.cwd(), '../contracts/src/managed/voting'),
+      path.resolve(process.cwd(), '../contracts/dist/managed/voting'),
+      path.resolve(process.cwd(), '../../contracts/src/managed/voting'),
+      path.resolve(process.cwd(), '../../contracts/dist/managed/voting'),
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) {
+        zkConfigPath = c;
+        break;
+      }
+    }
+  }
+  console.log(`Using zkConfigPath: ${zkConfigPath}`);
+  if (fs.existsSync(zkConfigPath)) {
+    console.log(`zkConfigPath contents:`, fs.readdirSync(zkConfigPath));
+  } else {
+    console.error(`ERROR: zkConfigPath does not exist: ${zkConfigPath}`);
+  }
+  const zkConfigProvider = new NodeZkConfigProvider(zkConfigPath);
   const storagePassword = "TempPassword123!Secure";
   
   const providers = {

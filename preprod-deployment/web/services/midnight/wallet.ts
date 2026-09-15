@@ -13,6 +13,20 @@ import {
 /** Finds the first browser-injected wallet whose connector API is compatible with this app. */
 const getFirstCompatibleWallet = (): InitialAPI | undefined => {
   if (typeof window === 'undefined' || !window.midnight) return undefined;
+  
+  // Look for 1AM wallet specifically
+  const oneamWallet = window.midnight['1am'] || window.midnight.oneam;
+  
+  if (
+    oneamWallet &&
+    typeof oneamWallet === 'object' &&
+    'apiVersion' in oneamWallet &&
+    semver.satisfies(oneamWallet.apiVersion as string, COMPATIBLE_CONNECTOR_API_VERSION)
+  ) {
+    return oneamWallet as InitialAPI;
+  }
+
+  // Fallback to any compatible wallet if 1AM isn't explicitly found
   return Object.values(window.midnight).find(
     (wallet): wallet is InitialAPI =>
       !!wallet &&
@@ -23,7 +37,8 @@ const getFirstCompatibleWallet = (): InitialAPI | undefined => {
 };
 
 /**
- * Discovers a compatible Midnight wallet extension (e.g. Lace, 1AM) and connects to it.
+ * Discovers a compatible Midnight wallet extension (1AM or Lace) and connects to it.
+ * Prefers the 1AM wallet if both are installed.
  *
  * @throws If no compatible wallet is found, the extension fails to respond, or the user
  * declines to authorize this application.
@@ -46,7 +61,7 @@ export const connectToWallet = (logger: Logger, networkId: string): Promise<Conn
         with: () =>
           throwError(() => {
             logger.error('Could not find wallet connector API');
-            return new Error('Could not find a Midnight wallet. Is the extension installed?');
+            return new Error('Could not find the 1AM wallet extension. Please install and enable it, then reload the page.');
           }),
       }),
       concatMap(async (initialAPI) => {
@@ -60,7 +75,7 @@ export const connectToWallet = (logger: Logger, networkId: string): Promise<Conn
         with: () =>
           throwError(() => {
             logger.error('Wallet connector API failed to respond');
-            return new Error('The Midnight wallet failed to respond. Is the extension enabled?');
+            return new Error('The 1AM wallet extension failed to respond. Make sure it is enabled and configured for Preprod.');
           }),
       }),
       catchError((error, apis) =>

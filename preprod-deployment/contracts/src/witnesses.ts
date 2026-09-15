@@ -29,11 +29,11 @@ import { WitnessContext } from "@midnight-ntwrk/midnight-js-protocol/compact-run
  * make an object of that type.
  */
 
-export type BBoardPrivateState = {
+export type VotingPrivateState = {
   readonly secretKey: Uint8Array;
 };
 
-export const createBBoardPrivateState = (secretKey: Uint8Array) => ({
+export const createVotingPrivateState = (secretKey: Uint8Array) => ({
   secretKey,
 });
 
@@ -45,7 +45,7 @@ export const createBBoardPrivateState = (secretKey: Uint8Array) => ({
  * The implementation of each function always takes as its first argument
  * a value of type WitnessContext<L, PS>, where L is the ledger object type
  * that corresponds to the ledger declaration in the Compact code, and PS
- *  is the private state type, like BBoardPrivateState defined above.
+ *  is the private state type, like VotingPrivateState defined above.
  *
  * A WitnessContext has three
  * fields:
@@ -56,7 +56,7 @@ export const createBBoardPrivateState = (secretKey: Uint8Array) => ({
  * The other arguments (after the first) to each witness function
  * correspond to the ones declared in Compact for the witness function.
  * The function's return value is a tuple of the new private state and
- * the declared return value.  In this case, that's a BBoardPrivateState
+ * the declared return value.  In this case, that's a VotingPrivateState
  * and a Uint8Array (because the contract declared a return value of Bytes[32],
  * and that's a Uint8Array in TypeScript).
  *
@@ -67,22 +67,22 @@ export const createBBoardPrivateState = (secretKey: Uint8Array) => ({
 export const witnesses = {
   secretKey: ({
     privateState,
-  }: WitnessContext<Ledger, BBoardPrivateState>): [
-    BBoardPrivateState,
+  }: WitnessContext<Ledger, VotingPrivateState>): [
+    VotingPrivateState,
     Uint8Array,
   ] => [privateState, privateState.secretKey],
 
   merklePath: ({
     privateState,
-  }: WitnessContext<Ledger, BBoardPrivateState>): [
-    BBoardPrivateState,
+  }: WitnessContext<Ledger, VotingPrivateState>): [
+    VotingPrivateState,
     [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array],
   ] => [privateState, [new Uint8Array(32), new Uint8Array(32), new Uint8Array(32), new Uint8Array(32), new Uint8Array(32)]],
 
   pathDirections: ({
     privateState,
-  }: WitnessContext<Ledger, BBoardPrivateState>): [
-    BBoardPrivateState,
+  }: WitnessContext<Ledger, VotingPrivateState>): [
+    VotingPrivateState,
     [boolean, boolean, boolean, boolean, boolean],
   ] => [privateState, [false, false, false, false, false]],
 };

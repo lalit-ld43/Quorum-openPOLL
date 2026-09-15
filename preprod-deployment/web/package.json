@@ -1,5 +1,5 @@
 {
-  "name": "@midnight-ntwrk/bboard-web",
+  "name": "@midnight-ntwrk/voting-web",
   "version": "0.1.0",
   "author": "IOG",
   "license": "MIT",
@@ -20,8 +20,8 @@
     "ci": "npm run typecheck && npm run lint && npm run build"
   },
   "dependencies": {
-    "@midnight-ntwrk/bboard-api": "*",
-    "@midnight-ntwrk/bboard-contract": "*",
+    "@midnight-ntwrk/voting-api": "*",
+    "@midnight-ntwrk/voting-contract": "*",
     "@midnight-ntwrk/dapp-connector-api": "4.0.1",
     "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "4.1.1",
     "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.1.1",

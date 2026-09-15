@@ -1,4 +1,4 @@
-import type { DeployedBBoardAPI } from '@midnight-ntwrk/bboard-api';
+import type { DeployedVotingAPI } from '@midnight-ntwrk/voting-api';
 import type { ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
 import type { Observable } from 'rxjs';
 
@@ -10,7 +10,7 @@ export interface InProgressBoardDeployment {
 /** A bulletin board deployment that has successfully resolved to a contract on-chain. */
 export interface DeployedBoardDeployment {
   readonly status: 'deployed';
-  readonly api: DeployedBBoardAPI;
+  readonly api: DeployedVotingAPI;
 }
 
 /** A bulletin board deployment that failed to deploy or join. */

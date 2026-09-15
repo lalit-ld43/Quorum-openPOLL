@@ -1,4 +1,4 @@
-import { type BBoardCircuitKeys, type BBoardProviders } from '@midnight-ntwrk/bboard-api';
+import { type VotingCircuitKeys, type VotingProviders } from '@midnight-ntwrk/voting-api';
 import { fromHex, toHex } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
@@ -11,7 +11,7 @@ import {
   Transaction,
   TransactionId,
 } from '@midnight-ntwrk/midnight-js-protocol/ledger';
-import { BBoardPrivateState } from '@midnight-ntwrk/bboard-contract';
+import { type VotingPrivateState } from '@midnight-ntwrk/voting-contract';
 import type { UnboundTransaction } from '@midnight-ntwrk/midnight-js-types';
 import { type Logger } from 'pino';
 import { networkId } from '@/config';
@@ -19,7 +19,7 @@ import { connectToWallet } from './wallet';
 import { inMemoryPrivateStateProvider } from './in-memory-private-state-provider';
 
 /**
- * Builds the full set of {@link BBoardProviders} required to deploy or join a bulletin board
+ * Builds the full set of {@link VotingProviders} required to deploy or join a voting
  * contract in a browser session.
  *
  * @remarks
@@ -27,12 +27,12 @@ import { inMemoryPrivateStateProvider } from './in-memory-private-state-provider
  * they come from the connected wallet's own configuration (`connectedAPI.getConfiguration()`),
  * so the same build works against whichever network the user's wallet is pointed at.
  */
-export const initializeProviders = async (logger: Logger): Promise<BBoardProviders> => {
+export const initializeProviders = async (logger: Logger): Promise<VotingProviders> => {
   const connectedAPI = await connectToWallet(logger, networkId);
   const zkConfigPath = window.location.origin;
-  const keyMaterialProvider = new FetchZkConfigProvider<BBoardCircuitKeys>(zkConfigPath, fetch.bind(window));
+  const keyMaterialProvider = new FetchZkConfigProvider<VotingCircuitKeys>(zkConfigPath, fetch.bind(window));
   const config = await connectedAPI.getConfiguration();
-  const privateStateProvider = inMemoryPrivateStateProvider<string, BBoardPrivateState>();
+  const privateStateProvider = inMemoryPrivateStateProvider<string, VotingPrivateState>();
   const shieldedAddresses = await connectedAPI.getShieldedAddresses();
 
   return {

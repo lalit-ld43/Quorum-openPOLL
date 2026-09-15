@@ -1,10 +1,10 @@
-import { BBoardAPI } from '@midnight-ntwrk/bboard-api';
+import { VotingAPI } from '@midnight-ntwrk/voting-api';
 import { type ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
 import { BehaviorSubject, type Observable } from 'rxjs';
 import { type Logger } from 'pino';
 import { initializeProviders } from './providers';
 import type { BoardDeployment, DeployedBoardAPIProvider } from './types';
-import type { BBoardProviders } from '@midnight-ntwrk/bboard-api';
+import type { VotingProviders } from '@midnight-ntwrk/voting-api';
 
 /**
  * A {@link DeployedBoardAPIProvider} that manages bulletin board deployments in a browser setting.
@@ -17,7 +17,7 @@ import type { BBoardProviders } from '@midnight-ntwrk/bboard-api';
  */
 export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
   readonly #boardDeploymentsSubject: BehaviorSubject<Array<BehaviorSubject<BoardDeployment>>>;
-  #initializedProviders: Promise<BBoardProviders> | undefined;
+  #initializedProviders: Promise<VotingProviders> | undefined;
 
   constructor(private readonly logger: Logger) {
     this.#boardDeploymentsSubject = new BehaviorSubject<Array<BehaviorSubject<BoardDeployment>>>([]);
@@ -42,7 +42,7 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
     if (contractAddress) {
       void this.joinDeployment(deployment, contractAddress);
     } else {
-      void this.deployDeployment(deployment);
+      deployment.next({ status: 'failed', error: new Error("Voting deployment not supported from UI. Please deploy via CLI.") });
     }
 
     this.#boardDeploymentsSubject.next([...deployments, deployment]);
@@ -50,18 +50,8 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
     return deployment;
   }
 
-  private getProviders(): Promise<BBoardProviders> {
+  private getProviders(): Promise<VotingProviders> {
     return (this.#initializedProviders ??= initializeProviders(this.logger));
-  }
-
-  private async deployDeployment(deployment: BehaviorSubject<BoardDeployment>): Promise<void> {
-    try {
-      const providers = await this.getProviders();
-      const api = await BBoardAPI.deploy(providers, this.logger);
-      deployment.next({ status: 'deployed', api });
-    } catch (error: unknown) {
-      deployment.next({ status: 'failed', error: error instanceof Error ? error : new Error(String(error)) });
-    }
   }
 
   private async joinDeployment(
@@ -70,10 +60,11 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
   ): Promise<void> {
     try {
       const providers = await this.getProviders();
-      const api = await BBoardAPI.join(providers, contractAddress, this.logger);
+      const api = await VotingAPI.join(providers, contractAddress, this.logger);
       deployment.next({ status: 'deployed', api });
     } catch (error: unknown) {
       deployment.next({ status: 'failed', error: error instanceof Error ? error : new Error(String(error)) });
     }
   }
 }
+

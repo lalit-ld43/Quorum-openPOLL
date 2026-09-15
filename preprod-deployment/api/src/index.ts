@@ -43,7 +43,7 @@ export class VotingAPI implements DeployedVotingAPI {
       map((contractState) => Voting.ledger(contractState.data)),
       map((ledgerState) => {
         const talliesMap: Record<number, bigint> = {};
-        for (const [key, value] of ledgerState.tallies.entries()) {
+        for (const [key, value] of ledgerState.tallies) {
           talliesMap[Number(key)] = value;
         }
 

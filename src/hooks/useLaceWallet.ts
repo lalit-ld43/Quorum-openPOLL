@@ -1,74 +1,78 @@
 import { useCallback, useState } from "react";
 
 // Midnight wallet extensions inject themselves under window.midnight.
-// 1AM wallet uses the Midnight DApp Connector API:
-//   window.midnight['1am'] → { apiVersion, enable(networkId) → ConnectedAPI }
-// Lace wallet uses a simpler API:
+// 1AM wallet (DApp Connector API v4):
+//   window.midnight['1am'] → { rdns, name, icon, apiVersion, connect(networkId) → ConnectedAPI }
+// Lace wallet (legacy):
 //   window.midnight.mnLace → { enable() → { address } }
 // See: https://docs.midnight.network — "Connect a wallet"
 declare global {
   interface Window {
-    midnight?: Record<string, MidnightWalletAdapter | undefined>;
+    midnight?: Record<string, OneAMWallet | LaceWallet | undefined>;
   }
 }
 
-/** Union of both wallet API shapes we may encounter. */
-type MidnightWalletAdapter =
-  | {
-      // Midnight DApp Connector API (1AM wallet)
-      apiVersion: string;
-      enable: (networkId: string) => Promise<ConnectedAPI>;
-      isEnabled?: () => Promise<boolean>;
-    }
-  | {
-      // Legacy Lace API
-      enable: () => Promise<{ address: string }>;
-      isEnabled?: () => Promise<boolean>;
-      apiVersion?: never;
-    };
+/** 1AM wallet shape (Midnight DApp Connector API v4) */
+interface OneAMWallet {
+  rdns: string;
+  name: string;
+  icon?: string;
+  apiVersion: string;
+  // 1AM uses connect(), NOT enable()
+  connect: (networkId: string) => Promise<ConnectedAPI>;
+}
 
-/** Subset of the ConnectedAPI returned by the 1AM DApp Connector. */
+/** Legacy Lace wallet shape */
+interface LaceWallet {
+  enable: () => Promise<{ address: string }>;
+  isEnabled?: () => Promise<boolean>;
+}
+
+/** Subset of ConnectedAPI returned by 1AM's connect() */
 interface ConnectedAPI {
-  getConnectionStatus?: () => Promise<unknown>;
   address?: string;
   changeAddress?: string;
+  getConnectionStatus?: () => Promise<unknown>;
   [key: string]: unknown;
 }
 
+function isOneAM(w: unknown): w is OneAMWallet {
+  return (
+    typeof w === "object" &&
+    w !== null &&
+    "apiVersion" in w &&
+    "connect" in w &&
+    typeof (w as OneAMWallet).connect === "function"
+  );
+}
+
+function isLace(w: unknown): w is LaceWallet {
+  return (
+    typeof w === "object" &&
+    w !== null &&
+    "enable" in w &&
+    typeof (w as LaceWallet).enable === "function"
+  );
+}
+
 /**
- * Scans window.midnight for the best available wallet adapter.
- * Prefers any adapter that exposes `apiVersion` (DApp Connector API / 1AM),
- * then falls back to the plain Lace adapter (mnLace).
+ * Scans window.midnight for the best available wallet.
+ * Prefers 1AM (DApp Connector API — uses connect()),
+ * then falls back to Lace (legacy — uses enable()).
  */
-function getWalletAdapter(): MidnightWalletAdapter | undefined {
+function getWalletAdapter(): OneAMWallet | LaceWallet | undefined {
   const m = window.midnight;
   if (!m) return undefined;
 
-  // Debug: log entire window.midnight structure so we can inspect 1AM's shape
-  console.log("[Quorum] window.midnight keys:", Object.keys(m));
-  Object.entries(m).forEach(([key, val]) => {
-    console.log(`[Quorum] window.midnight['${key}']:`, val, "keys:", val ? Object.keys(val) : "N/A");
-  });
+  // Prefer 1AM / any DApp Connector wallet (has apiVersion + connect)
+  const oneam = Object.values(m).find(isOneAM);
+  if (oneam) return oneam;
 
-  // Prefer DApp Connector API wallets (1AM, future wallets) — they expose apiVersion
-  const dappConnector = Object.values(m).find(
-    (w) => w && typeof w === "object" && "apiVersion" in w
-  );
-  if (dappConnector) {
-    console.log("[Quorum] Using DApp Connector wallet:", dappConnector);
-    return dappConnector;
-  }
-
-  // Fallback: legacy Lace API
+  // Fallback: Lace
   const lace = m["mnLace"];
-  if (lace) console.log("[Quorum] Using Lace wallet:", lace);
-  return lace;
-}
+  if (isLace(lace)) return lace;
 
-function isDappConnector(
-  w: MidnightWalletAdapter
-): w is Extract<MidnightWalletAdapter, { apiVersion: string }> {
-  return "apiVersion" in w && typeof w.apiVersion === "string";
+  return undefined;
 }
 
 export type WalletStatus = "disconnected" | "connecting" | "connected" | "unavailable" | "error";
@@ -85,7 +89,7 @@ export function useLaceWallet() {
     if (!wallet) {
       setStatus("unavailable");
       setError(
-        "No Midnight wallet detected. Please install the 1AM extension, configure it for Preprod, and reload."
+        "No Midnight wallet detected. Install the 1AM extension, configure it for Preprod, and reload."
       );
       return;
     }
@@ -93,20 +97,15 @@ export function useLaceWallet() {
     try {
       setStatus("connecting");
 
-      if (isDappConnector(wallet)) {
-        // 1AM / DApp Connector API — enable() requires a networkId
-        const connectedAPI = await wallet.enable("preprod");
-        // ConnectedAPI doesn't have a plain address field — just mark as connected
+      if (isOneAM(wallet)) {
+        // 1AM DApp Connector API — uses connect(networkId)
+        const connectedAPI = await wallet.connect("preprod");
         const addr =
-          typeof connectedAPI === "object" && connectedAPI !== null
-            ? ((connectedAPI as ConnectedAPI).address ??
-              (connectedAPI as ConnectedAPI).changeAddress ??
-              null)
-            : null;
-        setAddress(addr ?? "connected");
-      } else {
-        // Legacy Lace API — enable() returns { address }
-        const result = await (wallet as { enable: () => Promise<{ address: string }> }).enable();
+          connectedAPI?.address ?? connectedAPI?.changeAddress ?? null;
+        setAddress(addr ?? "1AM");
+      } else if (isLace(wallet)) {
+        // Legacy Lace API — uses enable()
+        const result = await wallet.enable();
         setAddress(result.address);
       }
 

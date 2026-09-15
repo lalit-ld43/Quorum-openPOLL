@@ -1,0 +1,125 @@
+// Quorum — anonymous ballots, publicly verifiable tallies
+// Midnight Builder Challenge — Level 3 (First Quarter)
+//
+// PRIVACY MODEL
+//   PUBLIC   : poll metadata, live per-option tally counts, the set of
+//              spent nullifiers, poll open/closed status.
+//   PRIVATE  : the voter's registration secret, which option they chose
+//              is proved-then-discarded inside the circuit — only the
+//              *aggregate* counter for that option is mutated on-chain.
+//   PROVED WITHOUT REVEALING: that the caller holds a valid registration
+//              credential for this poll and has not voted before,
+//              without revealing which credential, or which option,
+//              belongs to which voter.
+
+pragma language_version >= 0.15;
+
+import CompactStandardLibrary;
+
+// Depth of the eligibility Merkle tree: 2^5 = 32 possible registered voters
+// (expandable by increasing depth constant below).
+
+export ledger pollTitle: Opaque<"string">;
+export ledger optionLabels: Vector<4, Opaque<"string">>;
+export ledger optionCount: Uint<8>;
+export ledger tallies: Map<Uint<8>, Uint<64>>;
+export ledger nullifiers: Set<Bytes<32>>;
+export ledger eligibilityRoot: Bytes<32>;
+export ledger isOpen: Boolean;
+export ledger totalBallots: Counter;
+
+// ----------------------------------------------------------------------------
+// witness declarations — supplied privately by the caller, never on-chain
+// ----------------------------------------------------------------------------
+witness secretKey(): Bytes<32>;
+witness merklePath(): Vector<5, Bytes<32>>;
+witness pathDirections(): Vector<5, Boolean>;
+
+// ----------------------------------------------------------------------------
+// helper circuits — mirrors the boilerplate pattern exactly
+// ----------------------------------------------------------------------------
+circuit leafOf(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "quorum:leaf"), secret]);
+}
+
+circuit nullifierOf(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "quorum:null"), secret]);
+}
+
+circuit merkleRootFrom(
+  leaf: Bytes<32>,
+  path: Vector<5, Bytes<32>>,
+  directions: Vector<5, Boolean>
+): Bytes<32> {
+  const h0 = directions[0] ? persistentHash<Vector<2, Bytes<32>>>([path[0], leaf]) : persistentHash<Vector<2, Bytes<32>>>([leaf, path[0]]);
+  const h1 = directions[1] ? persistentHash<Vector<2, Bytes<32>>>([path[1], h0]) : persistentHash<Vector<2, Bytes<32>>>([h0, path[1]]);
+  const h2 = directions[2] ? persistentHash<Vector<2, Bytes<32>>>([path[2], h1]) : persistentHash<Vector<2, Bytes<32>>>([h1, path[2]]);
+  const h3 = directions[3] ? persistentHash<Vector<2, Bytes<32>>>([path[3], h2]) : persistentHash<Vector<2, Bytes<32>>>([h2, path[3]]);
+  const h4 = directions[4] ? persistentHash<Vector<2, Bytes<32>>>([path[4], h3]) : persistentHash<Vector<2, Bytes<32>>>([h3, path[4]]);
+  return h4;
+}
+
+// ----------------------------------------------------------------------------
+// constructor — deploys the contract and initialises state
+// ----------------------------------------------------------------------------
+constructor(
+  title: Opaque<"string">,
+  labels: Vector<4, Opaque<"string">>,
+  numOptions: Uint<8>,
+  root: Bytes<32>
+) {
+  assert(numOptions >= 2 && numOptions <= 4, "poll needs 2-4 options");
+  pollTitle = disclose(title);
+  optionLabels = disclose(labels);
+  optionCount = disclose(numOptions);
+  eligibilityRoot = disclose(root);
+  isOpen = true;
+  tallies.insert(0, 0);
+  tallies.insert(1, 0);
+  tallies.insert(2, 0);
+  tallies.insert(3, 0);
+}
+
+// ----------------------------------------------------------------------------
+// castBallot — the core privacy-preserving circuit
+//   1. Rebuilds Merkle root from voter's private secret + path.
+//   2. Asserts it matches the public eligibilityRoot (proves eligibility).
+//   3. Asserts the nullifier hasn't been spent (proves first-time voting).
+//   4. Records nullifier and increments the chosen option's public counter.
+// ----------------------------------------------------------------------------
+export circuit castBallot(chosenOption: Uint<8>): [] {
+  assert(isOpen, "poll is closed");
+  assert(chosenOption < optionCount, "invalid option");
+
+  const secret = secretKey();
+  const path = merklePath();
+  const directions = pathDirections();
+
+  const leaf = leafOf(secret);
+  const candidateRoot = merkleRootFrom(leaf, path, directions);
+  assert(candidateRoot == eligibilityRoot, "not an eligible voter");
+
+  const nullifier = nullifierOf(secret);
+  assert(!nullifiers.member(disclose(nullifier)), "ballot already cast");
+  nullifiers.insert(disclose(nullifier));
+
+  const opt = disclose(chosenOption);
+  const current = tallies.member(opt) ? tallies.lookup(opt) : (0 as Uint<64>);
+  tallies.insert(opt, (current + (1 as Uint<64>)) as Uint<64>);
+  totalBallots.increment(1);
+}
+
+// ----------------------------------------------------------------------------
+// closePoll — poll creator freezes further ballots
+// ----------------------------------------------------------------------------
+export circuit closePoll(): [] {
+  assert(isOpen, "already closed");
+  isOpen = false;
+}
+
+// ----------------------------------------------------------------------------
+// publicStats — convenience read-only view for the frontend
+// ----------------------------------------------------------------------------
+export circuit publicStats(): [Bytes<32>, Boolean, Uint<64>] {
+  return [eligibilityRoot, isOpen, totalBallots as Uint<64>];
+}

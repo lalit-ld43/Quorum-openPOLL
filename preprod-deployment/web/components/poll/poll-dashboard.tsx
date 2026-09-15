@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { type Observable } from 'rxjs';
 import { type VotingDerivedState, type DeployedVotingAPI } from '@midnight-ntwrk/voting-api';
 import type { BoardDeployment } from '@/services/midnight';
-import { CheckCircle2, LoaderCircle, ExternalLink, LogOut, Check } from 'lucide-react';
+import { CheckCircle2, LoaderCircle, ExternalLink, LogOut, XCircle } from 'lucide-react';
 
 export interface PollDashboardProps {
   boardDeployment$: Observable<BoardDeployment>;
@@ -45,20 +45,23 @@ export const PollDashboard: React.FC<Readonly<PollDashboardProps>> = ({ boardDep
     window.location.reload();
   }, []);
 
-  const handleVote = useCallback(async (optionIndex: number) => {
-    if (!deployedBoardAPI) return;
-    try {
-      setIsWorking(true);
-      setErrorMessage(undefined);
-      setTxHash(undefined);
-      const hash = await deployedBoardAPI.castBallot(optionIndex);
-      setTxHash(hash);
-    } catch (error: unknown) {
-      setErrorMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsWorking(false);
-    }
-  }, [deployedBoardAPI]);
+  const handleVote = useCallback(
+    async (optionIndex: number) => {
+      if (!deployedBoardAPI) return;
+      try {
+        setIsWorking(true);
+        setErrorMessage(undefined);
+        setTxHash(undefined);
+        const hash = await deployedBoardAPI.castBallot(optionIndex);
+        setTxHash(hash);
+      } catch (error: unknown) {
+        setErrorMessage(error instanceof Error ? error.message : String(error));
+      } finally {
+        setIsWorking(false);
+      }
+    },
+    [deployedBoardAPI],
+  );
 
   if (!boardState) {
     return (
@@ -74,7 +77,7 @@ export const PollDashboard: React.FC<Readonly<PollDashboardProps>> = ({ boardDep
   return (
     <div className="relative overflow-hidden p-8 sm:p-12 bg-gray-900/40 backdrop-blur-3xl rounded-[3rem] border border-white/10 shadow-2xl transition-all duration-500 hover:shadow-pink-500/10">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500" />
-      
+
       <div className="flex justify-between items-start mb-10">
         <div>
           <h2 className="text-4xl font-extrabold text-white mb-2">{boardState.pollTitle}</h2>
@@ -128,7 +131,7 @@ export const PollDashboard: React.FC<Readonly<PollDashboardProps>> = ({ boardDep
         {boardState.optionLabels.map((label, idx) => {
           const tally = Number(boardState.tallies[idx] || 0n);
           const percentage = totalVotes > 0 ? (tally / totalVotes) * 100 : 0;
-          
+
           return (
             <div key={idx} className="relative group">
               <button
@@ -136,7 +139,7 @@ export const PollDashboard: React.FC<Readonly<PollDashboardProps>> = ({ boardDep
                 disabled={isWorking || !boardState.isOpen}
                 className="w-full text-left p-6 bg-white/5 hover:bg-white/10 disabled:hover:bg-white/5 rounded-2xl border border-white/5 transition-all duration-300 overflow-hidden relative z-10"
               >
-                <div 
+                <div
                   className="absolute left-0 top-0 h-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 transition-all duration-1000 ease-out z-0"
                   style={{ width: `${percentage}%` }}
                 />
@@ -146,9 +149,7 @@ export const PollDashboard: React.FC<Readonly<PollDashboardProps>> = ({ boardDep
                   </span>
                   <div className="flex items-center space-x-4">
                     <span className="text-gray-400 font-mono text-sm">{tally} votes</span>
-                    <span className="text-white font-bold min-w-[3rem] text-right">
-                      {percentage.toFixed(1)}%
-                    </span>
+                    <span className="text-white font-bold min-w-[3rem] text-right">{percentage.toFixed(1)}%</span>
                   </div>
                 </div>
               </button>
@@ -156,7 +157,7 @@ export const PollDashboard: React.FC<Readonly<PollDashboardProps>> = ({ boardDep
           );
         })}
       </div>
-      
+
       {isWorking && (
         <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center rounded-[3rem] z-50">
           <div className="bg-gray-800 p-8 rounded-3xl border border-white/10 shadow-2xl flex flex-col items-center">

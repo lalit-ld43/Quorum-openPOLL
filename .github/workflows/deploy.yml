@@ -62,6 +62,7 @@ jobs:
           git add -f preprod-deployment/contracts/dist/
           git add -f preprod-deployment/api/dist/
           git diff --cached --quiet || git commit -m "chore: commit built contract & api artifacts for Vercel [skip ci]"
+          git pull --rebase origin main
           git push
 
       - name: Increase swap space

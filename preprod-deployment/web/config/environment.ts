@@ -8,6 +8,7 @@ import { z } from 'zod';
 const environmentSchema = z.object({
   NEXT_PUBLIC_NETWORK_ID: z.enum(['undeployed', 'devnet', 'testnet', 'preview', 'preprod', 'mainnet']),
   NEXT_PUBLIC_LOGGING_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+  NEXT_PUBLIC_CONTRACT_ADDRESS: z.string().optional(),
 });
 
 export type Environment = z.infer<typeof environmentSchema>;
@@ -16,6 +17,7 @@ const parseEnvironment = (): Environment => {
   const result = environmentSchema.safeParse({
     NEXT_PUBLIC_NETWORK_ID: process.env.NEXT_PUBLIC_NETWORK_ID,
     NEXT_PUBLIC_LOGGING_LEVEL: process.env.NEXT_PUBLIC_LOGGING_LEVEL,
+    NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
   });
 
   if (!result.success) {
@@ -30,3 +32,4 @@ const parseEnvironment = (): Environment => {
 };
 
 export const env = parseEnvironment();
+export const NEXT_PUBLIC_CONTRACT_ADDRESS = env.NEXT_PUBLIC_CONTRACT_ADDRESS;

@@ -22,7 +22,7 @@ import CompactStandardLibrary;
 
 export ledger pollTitle: Opaque<"string">;
 export ledger optionLabels: Vector<4, Opaque<"string">>;
-export ledger optionCount: Counter;                 // how many options are live (2-4)
+export ledger optionCount: Uint<8>;                 // how many options are live (2-4)
 export ledger tallies: Map<Uint<8>, Counter>;        // optionIndex -> vote count
 export ledger nullifiers: Set<Bytes<32>>;            // spent-ballot markers
 export ledger eligibilityRoot: Bytes<32>;            // Merkle root of eligible-voter commitments
@@ -51,11 +51,14 @@ export circuit createPoll(
   assert(numOptions >= 2 && numOptions <= 4, "poll needs 2-4 options");
   pollTitle = title;
   optionLabels = labels;
+  optionCount = numOptions;
   eligibilityRoot = root;
   isOpen = true;
   totalBallots = default<Counter>;
-  for (const i of 0..numOptions) {
-    tallies.insert(disclose(i), default<Counter>);
+  for (const i in 0..4) {
+    if (i < (numOptions as Uint<32>)) {
+      tallies.insert(i as Uint<8>, default<Counter>);
+    }
   }
 }
 

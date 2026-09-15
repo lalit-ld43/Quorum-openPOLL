@@ -1,5 +1,5 @@
 {
-  "installCommand": "cd .. && npm install --ignore-scripts && cd web",
+  "installCommand": "cd .. && npm install --ignore-scripts",
   "buildCommand": "cd .. && npm run build -w @midnight-ntwrk/voting-web",
   "outputDirectory": ".next",
   "framework": "nextjs"

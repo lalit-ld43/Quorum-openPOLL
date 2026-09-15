@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Header } from "./components/Header";
 import { BallotStub } from "./components/BallotStub";
 import { LiveTally } from "./components/LiveTally";

@@ -21,8 +21,8 @@ export function BallotStub({
       const txHash = await boardAPI.castBallot(chosen);
       setReceipt(txHash);
       setPhase("done");
-    } catch (err: any) {
-      setErrorMsg(err.message || "Ballot could not be cast.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : String(err));
       setPhase("error");
     }
   }

@@ -109,7 +109,7 @@ export function useLaceWallet() {
         // Legacy Lace API — uses enable()
         const result = await wallet.enable();
         setAddress(result.address);
-        setWalletAPI(result as any);
+        setWalletAPI(result as unknown as ConnectedAPI);
       }
 
       setStatus("connected");

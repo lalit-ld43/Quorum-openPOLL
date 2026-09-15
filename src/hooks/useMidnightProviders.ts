@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 import { useState, useEffect } from "react";
 import { type VotingDerivedState, type DeployedVotingAPI, VotingAPI, type VotingProviders, type VotingCircuitKeys } from "@midnight-ntwrk/voting-api";
-import { type VotingPrivateState } from "@midnight-ntwrk/voting-contract";
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
@@ -18,12 +17,18 @@ import type { UnboundTransaction } from "@midnight-ntwrk/midnight-js-types";
 import { pino } from "pino";
 
 const logger = pino({ level: "info" });
-const NETWORK_ID = "preprod";
 
 // Fallback to hardcoded address if VITE_CONTRACT_ADDRESS is not set
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "0ac997e5c2d31857d8bfa0d44ba30e8a6c4560bc79ff0c65c4c81da6da770c71";
 
-export function useMidnightProviders(connectedAPI: any | null) {
+interface WalletConnectorAPI {
+  getConfiguration(): Promise<{ proverServerUri?: string; indexerUri: string; indexerWsUri: string }>;
+  getShieldedAddresses(): Promise<{ shieldedCoinPublicKey: string; shieldedEncryptionPublicKey: string }>;
+  balanceUnsealedTransaction(tx: string): Promise<{ tx: string }>;
+  submitTransaction(tx: string): Promise<void>;
+}
+
+export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
   const [boardAPI, setBoardAPI] = useState<DeployedVotingAPI | null>(null);
   const [boardState, setBoardState] = useState<VotingDerivedState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +57,7 @@ export function useMidnightProviders(connectedAPI: any | null) {
             const data = store.get(key);
             return data ? JSON.parse(data) : null;
           },
-          set: async (key: string, value: any) => {
+          set: async (key: string, value: unknown) => {
             store.set(key, JSON.stringify(value));
           },
           setContractAddress: () => {},
@@ -62,7 +67,7 @@ export function useMidnightProviders(connectedAPI: any | null) {
           clear: async () => {
             store.clear();
           },
-        } as any;
+        } as unknown as VotingProviders["privateStateProvider"];
 
         const providers: VotingProviders = {
           privateStateProvider,
@@ -72,7 +77,7 @@ export function useMidnightProviders(connectedAPI: any | null) {
           walletProvider: {
             getCoinPublicKey: () => shieldedAddresses.shieldedCoinPublicKey,
             getEncryptionPublicKey: () => shieldedAddresses.shieldedEncryptionPublicKey,
-            balanceTx: async (tx: UnboundTransaction, ttl?: Date): Promise<FinalizedTransaction> => {
+            balanceTx: async (tx: UnboundTransaction): Promise<FinalizedTransaction> => {
               const serializedTx = toHex(tx.serialize());
               const received = await connectedAPI.balanceUnsealedTransaction(serializedTx);
               return Transaction.deserialize<SignatureEnabled, Proof, Binding>(
@@ -102,10 +107,10 @@ export function useMidnightProviders(connectedAPI: any | null) {
             }
           });
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error("Error initializing Midnight API:", e);
         if (isSubscribed) {
-          setError(e.message || "Failed to connect to smart contract.");
+          setError(e instanceof Error ? e.message : "Failed to connect to smart contract.");
         }
       }
     }

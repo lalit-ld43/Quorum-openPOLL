@@ -1,16 +1,31 @@
 import { useCallback, useState } from "react";
 
-// Midnight's Lace wallet injects itself at window.midnight.mnLace.
+// Midnight wallet extensions inject themselves under window.midnight.
+// 1AM wallet uses window.midnight['1am'] or window.midnight.oneam.
+// Lace wallet uses window.midnight.mnLace.
 // See: https://docs.midnight.network — "Connect a wallet"
 declare global {
   interface Window {
-    midnight?: {
-      mnLace?: {
-        enable: () => Promise<{ address: string }>;
-        isEnabled: () => Promise<boolean>;
-      };
-    };
+    midnight?: Record<
+      string,
+      | {
+          enable: () => Promise<{ address: string }>;
+          isEnabled: () => Promise<boolean>;
+        }
+      | undefined
+    >;
   }
+}
+
+/** Returns the first available Midnight wallet adapter, preferring 1AM. */
+function getWalletAdapter() {
+  const m = window.midnight;
+  if (!m) return undefined;
+  // 1AM wallet (prefer)
+  const oneam = m["1am"] ?? m["oneam"];
+  if (oneam) return oneam;
+  // Lace wallet (fallback)
+  return m["mnLace"];
 }
 
 export type WalletStatus = "disconnected" | "connecting" | "connected" | "unavailable" | "error";
@@ -22,15 +37,15 @@ export function useLaceWallet() {
 
   const connect = useCallback(async () => {
     setError(null);
-    const lace = window.midnight?.mnLace;
-    if (!lace) {
+    const wallet = getWalletAdapter();
+    if (!wallet) {
       setStatus("unavailable");
-      setError("Lace wallet extension was not detected in this browser.");
+      setError("No Midnight wallet extension detected. Please install 1AM or Lace and reload.");
       return;
     }
     try {
       setStatus("connecting");
-      const { address } = await lace.enable();
+      const { address } = await wallet.enable();
       setAddress(address);
       setStatus("connected");
     } catch (e) {

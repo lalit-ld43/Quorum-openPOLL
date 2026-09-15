@@ -54,7 +54,7 @@ export function Header({
               disabled={status === "connecting"}
               className="font-mono text-xs text-parchment border border-parchment/30 rounded px-3 py-1.5 hover:border-seal-light hover:text-seal-light transition-colors disabled:opacity-50"
             >
-              {status === "connecting" ? "connecting…" : "connect lace wallet"}
+              {status === "connecting" ? "connecting…" : "connect wallet"}
             </button>
           )}
           {status === "unavailable" && (

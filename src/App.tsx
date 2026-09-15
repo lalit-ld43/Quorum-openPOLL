@@ -3,11 +3,11 @@ import { BallotStub } from "./components/BallotStub";
 import { LiveTally } from "./components/LiveTally";
 import { PrivacyLedger } from "./components/PrivacyLedger";
 import { useLaceWallet } from "./hooks/useLaceWallet";
-import { useMidnightProviders } from "./hooks/useMidnightProviders";
+import { useMidnightProviders, type WalletConnectorAPI } from "./hooks/useMidnightProviders";
 
 function App() {
   const wallet = useLaceWallet();
-  const { boardAPI, boardState, error: midnightError } = useMidnightProviders(wallet.walletAPI);
+  const { boardAPI, boardState, error: midnightError } = useMidnightProviders(wallet.walletAPI as unknown as WalletConnectorAPI | null);
 
   // We no longer need forceRender as state is observable
   return (

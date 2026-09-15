@@ -21,7 +21,7 @@ const logger = pino({ level: "info" });
 // Fallback to hardcoded address if VITE_CONTRACT_ADDRESS is not set
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "0ac997e5c2d31857d8bfa0d44ba30e8a6c4560bc79ff0c65c4c81da6da770c71";
 
-interface WalletConnectorAPI {
+export interface WalletConnectorAPI {
   getConfiguration(): Promise<{ proverServerUri?: string; indexerUri: string; indexerWsUri: string }>;
   getShieldedAddresses(): Promise<{ shieldedCoinPublicKey: string; shieldedEncryptionPublicKey: string }>;
   balanceUnsealedTransaction(tx: string): Promise<{ tx: string }>;
@@ -42,13 +42,13 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
 
     let isSubscribed = true;
 
-    async function initialize() {
+    async function initialize(api: WalletConnectorAPI) {
       try {
         const zkConfigPath = window.location.origin;
         const keyMaterialProvider = new FetchZkConfigProvider<VotingCircuitKeys>(zkConfigPath, fetch.bind(window));
         
-        const config = await connectedAPI.getConfiguration();
-        const shieldedAddresses = await connectedAPI.getShieldedAddresses();
+        const config = await api.getConfiguration();
+        const shieldedAddresses = await api.getShieldedAddresses();
 
         // Very basic in-memory private state provider for this session
         const store = new Map<string, string>();
@@ -79,7 +79,7 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
             getEncryptionPublicKey: () => shieldedAddresses.shieldedEncryptionPublicKey,
             balanceTx: async (tx: UnboundTransaction): Promise<FinalizedTransaction> => {
               const serializedTx = toHex(tx.serialize());
-              const received = await connectedAPI.balanceUnsealedTransaction(serializedTx);
+              const received = await api.balanceUnsealedTransaction(serializedTx);
               return Transaction.deserialize<SignatureEnabled, Proof, Binding>(
                 "signature",
                 "proof",
@@ -90,18 +90,18 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
           },
           midnightProvider: {
             submitTx: async (tx: FinalizedTransaction): Promise<TransactionId> => {
-              await connectedAPI.submitTransaction(toHex(tx.serialize()));
+              await api.submitTransaction(toHex(tx.serialize()));
               const txIdentifiers = tx.identifiers();
               return txIdentifiers[0]!;
             },
           },
         };
 
-        const api = await VotingAPI.join(providers, CONTRACT_ADDRESS, logger);
+        const votingApi = await VotingAPI.join(providers, CONTRACT_ADDRESS, logger);
         
         if (isSubscribed) {
-          setBoardAPI(api);
-          api.state$.subscribe((state) => {
+          setBoardAPI(votingApi);
+          votingApi.state$.subscribe((state) => {
             if (isSubscribed) {
               setBoardState(state);
             }
@@ -115,7 +115,7 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
       }
     }
 
-    initialize();
+    initialize(connectedAPI);
 
     return () => {
       isSubscribed = false;

@@ -1,6 +1,6 @@
 {
   "installCommand": "cd .. && npm install --ignore-scripts",
-  "buildCommand": "cd .. && npm run build -w @midnight-ntwrk/voting-web",
+  "buildCommand": "cd .. && cp -r contracts/src/managed/voting/keys web/public/ && cp -r contracts/src/managed/voting/zkir web/public/ && npm run build -w @midnight-ntwrk/voting-web",
   "outputDirectory": ".next",
   "framework": "nextjs"
 }

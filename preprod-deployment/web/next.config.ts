@@ -8,8 +8,10 @@ import type { NextConfig } from 'next';
  */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
-  outputFileTracingRoot: path.join(__dirname, '..'),
+  // Vercel breaks if output is set to 'standalone' (it uses its own serverless builder).
+  // We keep standalone for Docker builds.
+  output: process.env.VERCEL ? undefined : 'standalone',
+  outputFileTracingRoot: process.env.VERCEL ? undefined : path.join(__dirname, '..'),
   transpilePackages: ['@midnight-ntwrk/voting-api', '@midnight-ntwrk/voting-contract'],
   turbopack: {
     // See lib/isomorphic-ws-browser-shim.ts for why this alias is needed. Turbopack (used by

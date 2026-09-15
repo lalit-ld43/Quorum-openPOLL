@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   outputFileTracingRoot: path.join(__dirname, '..'),
-  transpilePackages: ['@midnight-ntwrk/bboard-api', '@midnight-ntwrk/bboard-contract'],
+  transpilePackages: ['@midnight-ntwrk/voting-api', '@midnight-ntwrk/voting-contract'],
   turbopack: {
     // See lib/isomorphic-ws-browser-shim.ts for why this alias is needed. Turbopack (used by
     // `next dev`) doesn't read the `webpack()` config below, so it needs its own alias entry.

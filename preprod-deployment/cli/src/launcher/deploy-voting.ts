@@ -142,8 +142,11 @@ async function main() {
   console.log("Deploying contract...");
   let success = false;
   try {
+    const emptyRoot = new Uint8Array(32);
+    const emptyLabels = ["Option A", "Option B", "Option C", "Option D"];
     const deployed = await deployContract(providers, {
-        compiledContract: CompiledVotingContractContract
+        compiledContract: CompiledVotingContractContract,
+        args: ["Quorum Genesis Poll", emptyLabels, 2, emptyRoot]
     });
     
     const contractAddress = deployed.deployTxData.public.contractAddress;

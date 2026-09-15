@@ -12,86 +12,109 @@
 //              without revealing which credential, or which option,
 //              belongs to which voter.
 
-pragma language_version >= 0.16;
+pragma language_version >= 0.15;
 
 import CompactStandardLibrary;
 
-// ---------------------------------------------------------------------
-// Ledger (all fields below are PUBLIC on-chain state)
-// ---------------------------------------------------------------------
+// Depth of the eligibility Merkle tree: 2^5 = 32 possible registered voters
+// (expandable by increasing depth constant below).
 
 export ledger pollTitle: Opaque<"string">;
 export ledger optionLabels: Vector<4, Opaque<"string">>;
-export ledger optionCount: Uint<8>;                 // how many options are live (2-4)
-export ledger tallies: Map<Uint<8>, Counter>;        // optionIndex -> vote count
-export ledger nullifiers: Set<Bytes<32>>;            // spent-ballot markers
-export ledger eligibilityRoot: Bytes<32>;            // Merkle root of eligible-voter commitments
+export ledger optionCount: Uint<8>;
+export ledger tallies: Map<Uint<8>, Counter>;
+export ledger nullifiers: Set<Bytes<32>>;
+export ledger eligibilityRoot: Bytes<32>;
 export ledger isOpen: Boolean;
 export ledger totalBallots: Counter;
 
-// ---------------------------------------------------------------------
-// Witnesses (PRIVATE — supplied locally by the voter, never transmitted)
-// ---------------------------------------------------------------------
-
+// ----------------------------------------------------------------------------
+// witness declarations — supplied privately by the caller, never on-chain
+// ----------------------------------------------------------------------------
 witness voterSecret(): Bytes<32>;
-witness voterMerklePath(): MerkleTreePath<10, Bytes<32>>;
+witness voterMerklePath(): Vector<5, Bytes<32>>;
+witness voterPathDirections(): Vector<5, Boolean>;
 
-// ---------------------------------------------------------------------
-// Circuits
-// ---------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// helper circuits — mirrors the boilerplate pattern exactly
+// ----------------------------------------------------------------------------
+circuit leafOf(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "quorum:leaf"), secret]);
+}
 
-// Poll creator opens a poll with 2-4 options and an eligibility root
-// (root of a Merkle tree of hashed voter-registration commitments).
-export circuit createPoll(
+circuit nullifierOf(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "quorum:null"), secret]);
+}
+
+circuit merkleRootFrom(
+  leaf: Bytes<32>,
+  path: Vector<5, Bytes<32>>,
+  directions: Vector<5, Boolean>
+): Bytes<32> {
+  const h0 = directions[0] ? persistentHash<Vector<2, Bytes<32>>>([path[0], leaf]) : persistentHash<Vector<2, Bytes<32>>>([leaf, path[0]]);
+  const h1 = directions[1] ? persistentHash<Vector<2, Bytes<32>>>([path[1], h0]) : persistentHash<Vector<2, Bytes<32>>>([h0, path[1]]);
+  const h2 = directions[2] ? persistentHash<Vector<2, Bytes<32>>>([path[2], h1]) : persistentHash<Vector<2, Bytes<32>>>([h1, path[2]]);
+  const h3 = directions[3] ? persistentHash<Vector<2, Bytes<32>>>([path[3], h2]) : persistentHash<Vector<2, Bytes<32>>>([h2, path[3]]);
+  const h4 = directions[4] ? persistentHash<Vector<2, Bytes<32>>>([path[4], h3]) : persistentHash<Vector<2, Bytes<32>>>([h3, path[4]]);
+  return h4;
+}
+
+// ----------------------------------------------------------------------------
+// constructor — deploys the contract and initialises state
+// ----------------------------------------------------------------------------
+constructor(
   title: Opaque<"string">,
   labels: Vector<4, Opaque<"string">>,
   numOptions: Uint<8>,
   root: Bytes<32>
-): [] {
+) {
   assert(numOptions >= 2 && numOptions <= 4, "poll needs 2-4 options");
-  pollTitle = title;
-  optionLabels = labels;
-  optionCount = numOptions;
-  eligibilityRoot = root;
+  pollTitle = disclose(title);
+  optionLabels = disclose(labels);
+  optionCount = disclose(numOptions);
+  eligibilityRoot = disclose(root);
   isOpen = true;
-  for (const i of 0..4) {
-    if (i < (numOptions as Uint<32>)) {
-      tallies.insert(i as Uint<8>, default<Counter>);
-    }
-  }
 }
 
-// Cast an anonymous ballot. The voter proves, in zero-knowledge:
-//   1) their secret hashes into a leaf that is a member of eligibilityRoot
-//   2) the nullifier derived from that secret + pollTitle has not been used
-// Only the chosen option's PUBLIC counter is incremented. Nothing linking
-// this transaction to the voter's identity, or the voter to their choice,
-// is ever written to the ledger.
+// ----------------------------------------------------------------------------
+// castBallot — the core privacy-preserving circuit
+//   1. Rebuilds Merkle root from voter's private secret + path.
+//   2. Asserts it matches the public eligibilityRoot (proves eligibility).
+//   3. Asserts the nullifier hasn't been spent (proves first-time voting).
+//   4. Records nullifier and increments the chosen option's public counter.
+// ----------------------------------------------------------------------------
 export circuit castBallot(chosenOption: Uint<8>): [] {
   assert(isOpen, "poll is closed");
   assert(chosenOption < optionCount, "invalid option");
 
   const secret = voterSecret();
   const path = voterMerklePath();
+  const directions = voterPathDirections();
 
-  const leaf = persistentHash<Bytes<32>>(secret);
-  const computedRoot = merkleTreePathRoot<10, Bytes<32>>(path, leaf);
-  assert(computedRoot == eligibilityRoot, "not an eligible voter");
+  const leaf = leafOf(secret);
+  const candidateRoot = merkleRootFrom(leaf, path, directions);
+  assert(candidateRoot == eligibilityRoot, "not an eligible voter");
 
-  const nullifier = persistentHash<Vector<2, Bytes<32>>>(
-    [secret, persistentHash<Opaque<"string">>(pollTitle)]
-  );
-  assert(!nullifiers.member(nullifier), "ballot already cast");
-  nullifiers.insert(nullifier);
+  const nullifier = nullifierOf(secret);
+  assert(!nullifiers.member(disclose(nullifier)), "ballot already cast");
+  nullifiers.insert(disclose(nullifier));
 
   const current = tallies.lookup(disclose(chosenOption));
   tallies.insert(disclose(chosenOption), current.increment(1));
   totalBallots.increment(1);
 }
 
-// Poll creator closes voting. Tallies remain exactly as they are —
-// closing does not reveal anything new, it only freezes further ballots.
+// ----------------------------------------------------------------------------
+// closePoll — poll creator freezes further ballots
+// ----------------------------------------------------------------------------
 export circuit closePoll(): [] {
   assert(isOpen, "already closed");
   isOpen = false;
+}
+
+// ----------------------------------------------------------------------------
+// publicStats — convenience read-only view for the frontend
+// ----------------------------------------------------------------------------
+export circuit publicStats(): [Bytes<32>, Boolean, Uint<64>] {
+  return [eligibilityRoot, isOpen, totalBallots as Uint<64>];
 }

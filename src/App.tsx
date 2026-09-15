@@ -7,7 +7,7 @@ import { useMidnightProviders, type WalletConnectorAPI } from "./hooks/useMidnig
 
 function App() {
   const wallet = useLaceWallet();
-  const { boardAPI, boardState, error: midnightError } = useMidnightProviders(wallet.walletAPI as unknown as WalletConnectorAPI | null);
+  const { boardAPI, boardState, error: midnightError, initStep } = useMidnightProviders(wallet.walletAPI as unknown as WalletConnectorAPI | null);
 
   // We no longer need forceRender as state is observable
   return (
@@ -53,6 +53,17 @@ function App() {
                 ? "Synchronizing with Midnight Network..."
                 : "Connect your wallet to participate in the poll."}
             </p>
+            {wallet.status === "connected" && (
+              <p className="text-parchment/40 mt-2 font-mono text-xs">
+                {initStep}
+              </p>
+            )}
+            {midnightError && (
+              <div className="mt-6 border border-seal/30 bg-seal/10 text-seal rounded-md p-4 inline-block max-w-lg text-sm text-left">
+                <strong className="block mb-1">Initialization Error</strong>
+                <span className="font-mono">{midnightError}</span>
+              </div>
+            )}
           </section>
         )}
       </main>

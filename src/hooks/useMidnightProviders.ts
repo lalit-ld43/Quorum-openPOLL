@@ -32,11 +32,13 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
   const [boardAPI, setBoardAPI] = useState<DeployedVotingAPI | null>(null);
   const [boardState, setBoardState] = useState<VotingDerivedState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [initStep, setInitStep] = useState<string>("Initializing...");
 
   useEffect(() => {
     if (!connectedAPI) {
       setBoardAPI(null);
       setBoardState(null);
+      setInitStep("Waiting for wallet...");
       return;
     }
 
@@ -44,12 +46,16 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
 
     async function initialize(api: WalletConnectorAPI) {
       try {
+        setInitStep("Fetching configuration...");
         const zkConfigPath = window.location.origin;
         const keyMaterialProvider = new FetchZkConfigProvider<VotingCircuitKeys>(zkConfigPath, fetch.bind(window));
         
         const config = await api.getConfiguration();
+        
+        setInitStep("Getting shielded addresses...");
         const shieldedAddresses = await api.getShieldedAddresses();
 
+        setInitStep("Setting up providers...");
         // Very basic in-memory private state provider for this session
         const store = new Map<string, string>();
         const privateStateProvider = {
@@ -97,13 +103,16 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
           },
         };
 
+        setInitStep(`Joining contract at ${CONTRACT_ADDRESS}...`);
         const votingApi = await VotingAPI.join(providers, CONTRACT_ADDRESS, logger);
         
+        setInitStep("Subscribing to state...");
         if (isSubscribed) {
           setBoardAPI(votingApi);
           votingApi.state$.subscribe((state) => {
             if (isSubscribed) {
               setBoardState(state);
+              setInitStep("Connected");
             }
           });
         }
@@ -111,6 +120,7 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
         console.error("Error initializing Midnight API:", e);
         if (isSubscribed) {
           setError(e instanceof Error ? e.message : "Failed to connect to smart contract.");
+          setInitStep("Error occurred");
         }
       }
     }
@@ -122,5 +132,5 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
     };
   }, [connectedAPI]);
 
-  return { boardAPI, boardState, error };
+  return { boardAPI, boardState, error, initStep };
 }

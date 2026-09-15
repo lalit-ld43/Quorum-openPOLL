@@ -80,6 +80,7 @@ export type WalletStatus = "disconnected" | "connecting" | "connected" | "unavai
 export function useLaceWallet() {
   const [status, setStatus] = useState<WalletStatus>("disconnected");
   const [address, setAddress] = useState<string | null>(null);
+  const [walletAPI, setWalletAPI] = useState<ConnectedAPI | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const connect = useCallback(async () => {
@@ -103,10 +104,12 @@ export function useLaceWallet() {
         const addr =
           connectedAPI?.address ?? connectedAPI?.changeAddress ?? null;
         setAddress(addr ?? "1AM");
+        setWalletAPI(connectedAPI);
       } else if (isLace(wallet)) {
         // Legacy Lace API — uses enable()
         const result = await wallet.enable();
         setAddress(result.address);
+        setWalletAPI(result as any);
       }
 
       setStatus("connected");
@@ -118,8 +121,9 @@ export function useLaceWallet() {
 
   const disconnect = useCallback(() => {
     setAddress(null);
+    setWalletAPI(null);
     setStatus("disconnected");
   }, []);
 
-  return { status, address, error, connect, disconnect };
+  return { status, address, error, connect, disconnect, walletAPI };
 }

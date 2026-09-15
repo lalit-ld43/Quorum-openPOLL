@@ -1,8 +1,11 @@
-import { PollState, leadingOption } from "../lib/votingSimulator";
+import type { VotingDerivedState } from "@midnight-ntwrk/voting-api";
 
-export function LiveTally({ poll }: { poll: PollState }) {
-  const total = poll.totalBallots || 0;
-  const leader = leadingOption(poll);
+export function LiveTally({ boardState }: { boardState: VotingDerivedState }) {
+  const total = Number(boardState.totalBallots) || 0;
+  
+  // Find the highest tally
+  const tallies = boardState.optionLabels.map((_, idx) => Number(boardState.tallies[idx] || 0n));
+  const maxTally = tallies.length > 0 ? Math.max(...tallies) : 0;
 
   return (
     <div className="border border-parchment/12 rounded-sm p-6">
@@ -14,15 +17,15 @@ export function LiveTally({ poll }: { poll: PollState }) {
       </div>
 
       <div className="space-y-4">
-        {poll.options.map((opt) => {
-          const count = poll.tallies[opt.id] ?? 0;
+        {boardState.optionLabels.map((label, idx) => {
+          const count = tallies[idx] ?? 0;
           const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-          const isLeader = leader?.id === opt.id && total > 0;
+          const isLeader = count === maxTally && total > 0;
           return (
-            <div key={opt.id}>
+            <div key={idx}>
               <div className="flex justify-between text-sm mb-1.5">
                 <span className={isLeader ? "text-parchment" : "text-parchment/70"}>
-                  {opt.label}
+                  {label}
                 </span>
                 <span className="font-mono text-xs text-parchment/50">
                   {count} · {pct}%
@@ -42,8 +45,7 @@ export function LiveTally({ poll }: { poll: PollState }) {
       </div>
 
       <p className="font-mono text-[11px] text-parchment/35 mt-5">
-        {total} total ballot{total === 1 ? "" : "s"} · {poll.nullifiers.size} spent
-        credential{poll.nullifiers.size === 1 ? "" : "s"}
+        {total} total ballot{total === 1 ? "" : "s"} cast
       </p>
     </div>
   );

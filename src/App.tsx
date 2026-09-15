@@ -1,27 +1,22 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Header } from "./components/Header";
 import { BallotStub } from "./components/BallotStub";
 import { LiveTally } from "./components/LiveTally";
 import { PrivacyLedger } from "./components/PrivacyLedger";
 import { useLaceWallet } from "./hooks/useLaceWallet";
-import { createPoll } from "./lib/votingSimulator";
-
-// The active poll for this Level 3 submission. In production this would
-// be read from the deployed contract's ledger state on Preprod.
-const POLL_TITLE = "Should Quorum adopt quadratic weighting for Level 6?";
-const POLL_OPTIONS = ["Yes — weight by conviction", "No — keep one voter, one ballot"];
+import { useMidnightProviders } from "./hooks/useMidnightProviders";
 
 function App() {
   const wallet = useLaceWallet();
-  const poll = useMemo(() => createPoll(POLL_TITLE, POLL_OPTIONS), []);
-  const [, forceRender] = useState(0);
+  const { boardAPI, boardState, error: midnightError } = useMidnightProviders(wallet.walletAPI);
 
+  // We no longer need forceRender as state is observable
   return (
     <div className="min-h-screen bg-ink flex flex-col">
       <Header
         status={wallet.status}
         address={wallet.address}
-        error={wallet.error}
+        error={wallet.error || midnightError}
         onConnect={wallet.connect}
         onDisconnect={wallet.disconnect}
       />
@@ -41,14 +36,26 @@ function App() {
           </p>
         </section>
 
-        <section className="mb-10">
-          <BallotStub poll={poll} onCast={() => forceRender((n) => n + 1)} />
-        </section>
+        {boardState ? (
+          <>
+            <section className="mb-10">
+              <BallotStub boardState={boardState} boardAPI={boardAPI} />
+            </section>
 
-        <section className="grid gap-6 sm:grid-cols-2">
-          <LiveTally poll={poll} />
-          <PrivacyLedger />
-        </section>
+            <section className="grid gap-6 sm:grid-cols-2">
+              <LiveTally boardState={boardState} />
+              <PrivacyLedger />
+            </section>
+          </>
+        ) : (
+          <section className="py-20 text-center">
+            <p className="text-parchment/60 animate-pulse">
+              {wallet.status === "connected" 
+                ? "Synchronizing with Midnight Network..."
+                : "Connect your wallet to participate in the poll."}
+            </p>
+          </section>
+        )}
       </main>
 
       <footer className="border-t border-parchment/10">

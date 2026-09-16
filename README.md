@@ -1,9 +1,15 @@
-# Quorum
-![CI](https://github.com/lalit-ld43/Quorum-openPOLL/actions/workflows/ci.yml/badge.svg)
-> Anonymous ballots, publicly verifiable tallies — built on Midnight.
+# 🌓 Quorum: Private Voting Dashboard
 
+![CI](https://github.com/lalit-ld43/Quorum-openPOLL/actions/workflows/ci.yml/badge.svg)
+![Midnight](https://img.shields.io/badge/Midnight-Network-purple?style=flat-square)
+![React](https://img.shields.io/badge/React-TypeScript-blue?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Production--Grade-success?style=flat-square)
+
+> **Anonymous ballots, publicly verifiable tallies — built natively on Midnight.**
+> Exactly half the moon is lit, and exactly as much of your app is disclosed as you decide.
 ## Live Demo
-[https://quorum-open-poll.vercel.app/](https://quorum-open-poll.vercel.app/)
+**Play the Demo:** [https://quorum-open-poll.vercel.app/](https://quorum-open-poll.vercel.app/)
+**Watch the Walkthrough:** [Demo Video](https://drive.google.com/file/d/19KLRmeOsVo50i6m6EyoofquGd5gCdcY7/view?usp=sharing)
 
 ## Contract Addresses & Verification
 This dashboard connects to three independent governance smart contracts deployed on the Midnight Preprod Network.

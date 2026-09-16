@@ -7,7 +7,7 @@ import { useMidnightProviders, type WalletConnectorAPI } from "./hooks/useMidnig
 
 function App() {
   const wallet = useLaceWallet();
-  const { boardAPI, boardState, error: midnightError, initStep } = useMidnightProviders(wallet.walletAPI as unknown as WalletConnectorAPI | null);
+  const { boardAPIs, boardStates, error: midnightError, initStep } = useMidnightProviders(wallet.walletAPI as unknown as WalletConnectorAPI | null);
 
   // We no longer need forceRender as state is observable
   return (
@@ -35,23 +35,35 @@ function App() {
           </p>
         </section>
 
-        {boardState ? (
-          <>
-            <section className="mb-10">
-              <BallotStub boardState={boardState} boardAPI={boardAPI} />
-            </section>
+        {boardStates.length > 0 && boardStates.every(s => s !== null) ? (
+          <div className="space-y-16">
+            {boardStates.map((state, idx) => (
+              <div key={idx} className="relative">
+                <section className="mb-10">
+                  <BallotStub boardState={state!} boardAPI={boardAPIs[idx]} />
+                </section>
 
-            <section className="grid gap-6 sm:grid-cols-2">
-              <LiveTally boardState={boardState} />
-              <PrivacyLedger />
-            </section>
-          </>
+                <section className="grid gap-6 sm:grid-cols-2">
+                  <LiveTally boardState={state!} />
+                  <PrivacyLedger />
+                </section>
+                
+                {idx < boardStates.length - 1 && (
+                  <div className="mt-16 border-b border-parchment/10 relative">
+                    <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-ink px-4 text-parchment/20 text-xl font-mono">
+                      ***
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <section className="py-20 text-center">
             <p className="text-parchment/60 animate-pulse">
               {wallet.status === "connected" 
                 ? "Synchronizing with Midnight Network..."
-                : "Connect your wallet to participate in the poll."}
+                : "Connect your wallet to participate in the polls."}
             </p>
             {wallet.status === "connected" && (
               <p className="text-parchment/40 mt-2 font-mono text-xs">

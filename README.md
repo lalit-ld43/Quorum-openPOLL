@@ -10,13 +10,13 @@ This dashboard connects to three independent governance smart contracts deployed
 
 | Poll Topic | Contract Address | Midnight Explorer Link |
 |------------|------------------|------------------------|
-| **DAO Treasury** | `7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123` | [View Contract](https://www.midnightexplorer.com/contract/7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123) |
-| **Board Election** | `918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0` | [View Contract](https://www.midnightexplorer.com/contract/918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0) |
-| **Code of Conduct** | `f2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc` | [View Contract](https://www.midnightexplorer.com/contract/f2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc) |
+| **DAO Treasury** | `7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123` | [View Contract](https://preprod.midnightexplorer.com/contracts/0x7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123) |
+| **Board Election** | `918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0` | [View Contract](https://preprod.midnightexplorer.com/contracts/0x918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0) |
+| **Code of Conduct** | `f2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc` | [View Contract](https://preprod.midnightexplorer.com/contracts/0xf2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc) |
 
 ### Verified Vote Transaction Example
 To see an example of a successfully verified zero-knowledge ballot being cast on the network, see this finalized transaction:
-[View Verified Vote on Midnight Explorer](https://www.midnightexplorer.com/transaction/50b97c10509127dfa88d5a5cbb4451a31af80c94766a6c0f49903d56dd5b52bf)
+[View Verified Vote on Midnight Explorer](https://preprod.midnightexplorer.com/transactions/0x50b97c10509127dfa88d5a5cbb4451a31af80c94766a6c0f49903d56dd5b52bf)
 
 ## What This Does
 Quorum lets anyone open a poll (2–4 options) and lets registered voters

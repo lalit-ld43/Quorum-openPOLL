@@ -11,6 +11,19 @@
 **Play the Demo:** [https://quorum-open-poll.vercel.app/](https://quorum-open-poll.vercel.app/)
 **Watch the Walkthrough:** [Demo Video](https://drive.google.com/file/d/19KLRmeOsVo50i6m6EyoofquGd5gCdcY7/view?usp=sharing)
 
+## Contract Addresses & Verification
+This dashboard connects to three independent governance smart contracts deployed on the Midnight Preprod Network.
+
+| Poll Topic | Contract Address | Midnight Explorer Link |
+|------------|------------------|------------------------|
+| **DAO Treasury** | `7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123` | [View Contract](https://preprod.midnightexplorer.com/contracts/0x7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123) |
+| **Board Election** | `918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0` | [View Contract](https://preprod.midnightexplorer.com/contracts/0x918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0) |
+| **Code of Conduct** | `f2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc` | [View Contract](https://preprod.midnightexplorer.com/contracts/0xf2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc) |
+
+### Verified Vote Transaction Example
+To see an example of a successfully verified zero-knowledge ballot being cast on the network, see this finalized transaction:
+[View Verified Vote on Midnight Explorer](https://preprod.midnightexplorer.com/transactions/0x50b97c10509127dfa88d5a5cbb4451a31af80c94766a6c0f49903d56dd5b52bf)
+
 ## Screenshots & Evidence
 Here is the evidence of the successful deployment, testing, and operation of the Quorum Private Voting Dashboard:
 
@@ -25,19 +38,6 @@ The transaction is submitted to the Midnight Preprod Network. As seen on the 1AM
 ### 3. Passing Test Suite
 The project includes a robust test suite that verifies the circuit logic, state transitions, and privacy guarantees.
 ![Test Output](screenshots/test-output.png)
-
-## Contract Addresses & Verification
-This dashboard connects to three independent governance smart contracts deployed on the Midnight Preprod Network.
-
-| Poll Topic | Contract Address | Midnight Explorer Link |
-|------------|------------------|------------------------|
-| **DAO Treasury** | `7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123` | [View Contract](https://preprod.midnightexplorer.com/contracts/0x7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123) |
-| **Board Election** | `918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0` | [View Contract](https://preprod.midnightexplorer.com/contracts/0x918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0) |
-| **Code of Conduct** | `f2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc` | [View Contract](https://preprod.midnightexplorer.com/contracts/0xf2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc) |
-
-### Verified Vote Transaction Example
-To see an example of a successfully verified zero-knowledge ballot being cast on the network, see this finalized transaction:
-[View Verified Vote on Midnight Explorer](https://preprod.midnightexplorer.com/transactions/0x50b97c10509127dfa88d5a5cbb4451a31af80c94766a6c0f49903d56dd5b52bf)
 
 ## What This Does
 Quorum lets anyone open a poll (2–4 options) and lets registered voters

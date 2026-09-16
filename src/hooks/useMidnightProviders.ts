@@ -21,7 +21,7 @@ import { pino } from "pino";
 const logger = pino({ level: "info" });
 
 // Fallback to hardcoded address if VITE_CONTRACT_ADDRESS is not set
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "0a37c26d078364b1210e5458eb365feb45716c8e5092766f70ae1b3b1dd2487f";
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "743db6cf817d773097159a8d209fd2df42b567d9e13581721d080a0885d73570";
 
 export interface WalletConnectorAPI {
   getConfiguration(): Promise<{ proverServerUri?: string; indexerUri: string; indexerWsUri: string }>;

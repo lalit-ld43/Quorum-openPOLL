@@ -20,8 +20,8 @@ import { pino } from "pino";
 
 const logger = pino({ level: "info" });
 
-// Fallback to hardcoded address if VITE_CONTRACT_ADDRESS is not set
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "743db6cf817d773097159a8d209fd2df42b567d9e13581721d080a0885d73570";
+// Fallback to hardcoded addresses if not set
+const CONTRACT_ADDRESSES = (import.meta.env.VITE_CONTRACT_ADDRESSES || "7d2753a1c0e67ad599a11a62174066b7dd07f2b3b6807f24adbe82671e27c123,918b1b4a90e69b31e71c628432cab41f2592d97d41b244e54793931c41e8bcb0,f2f8bd1854ee0cf1b99e70f8127618bc37809618e8fc217e45cd2d3f514a7adc").split(',');
 
 export interface WalletConnectorAPI {
   getConfiguration(): Promise<{ proverServerUri?: string; indexerUri: string; indexerWsUri: string }>;
@@ -31,15 +31,15 @@ export interface WalletConnectorAPI {
 }
 
 export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
-  const [boardAPI, setBoardAPI] = useState<DeployedVotingAPI | null>(null);
-  const [boardState, setBoardState] = useState<VotingDerivedState | null>(null);
+  const [boardAPIs, setBoardAPIs] = useState<DeployedVotingAPI[]>([]);
+  const [boardStates, setBoardStates] = useState<(VotingDerivedState | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [initStep, setInitStep] = useState<string>("Initializing...");
 
   useEffect(() => {
     if (!connectedAPI) {
-      setBoardAPI(null);
-      setBoardState(null);
+      setBoardAPIs([]);
+      setBoardStates([]);
       setInitStep("Waiting for wallet...");
       return;
     }
@@ -88,17 +88,29 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
           },
         };
 
-        setInitStep(`Joining contract at ${CONTRACT_ADDRESS}...`);
-        const votingApi = await VotingAPI.join(providers, CONTRACT_ADDRESS, logger);
+        setInitStep(`Joining ${CONTRACT_ADDRESSES.length} contracts...`);
+        const apis: DeployedVotingAPI[] = [];
+        for (const address of CONTRACT_ADDRESSES) {
+          const votingApi = await VotingAPI.join(providers, address.trim(), logger);
+          apis.push(votingApi);
+        }
         
         setInitStep("Subscribing to state...");
         if (isSubscribed) {
-          setBoardAPI(votingApi);
-          votingApi.state$.subscribe((state) => {
-            if (isSubscribed) {
-              setBoardState(state);
-              setInitStep("Connected");
-            }
+          setBoardAPIs(apis);
+          setBoardStates(new Array(apis.length).fill(null));
+          
+          apis.forEach((api, index) => {
+            api.state$.subscribe((state) => {
+              if (isSubscribed) {
+                setBoardStates((prev) => {
+                  const newStates = [...prev];
+                  newStates[index] = state;
+                  return newStates;
+                });
+                setInitStep("Connected");
+              }
+            });
           });
         }
       } catch (e: unknown) {
@@ -117,5 +129,5 @@ export function useMidnightProviders(connectedAPI: WalletConnectorAPI | null) {
     };
   }, [connectedAPI]);
 
-  return { boardAPI, boardState, error, initStep };
+  return { boardAPIs, boardStates, error, initStep };
 }

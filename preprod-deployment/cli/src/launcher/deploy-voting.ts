@@ -161,28 +161,45 @@ async function main() {
     midnightProvider: walletProvider,
   };
   
-  console.log("Deploying contract...");
+  console.log("Deploying contracts...");
   let success = false;
   try {
     const emptyRoot = new Uint8Array(32);
-    const emptyLabels = ["Option A", "Option B", "Option C", "Option D"];
-    const deployed = await deployContract(providers, {
-        compiledContract: CompiledVotingContractContract,
-        args: ["Quorum Genesis Poll", emptyLabels, 4n, emptyRoot]
-    });
+    const polls = [
+      {
+        title: "DAO Treasury Allocation",
+        labels: ["Fund Core Dev", "Fund Marketing", "Dividends", "Retain Treasury"]
+      },
+      {
+        title: "Board of Directors Election",
+        labels: ["Alice (Incumbent)", "Bob (Challenger)", "Charlie (Indep)", "Abstain"]
+      },
+      {
+        title: "Community Code of Conduct",
+        labels: ["Adopt Proposal A", "Adopt Proposal B", "Reject Both", "Abstain"]
+      }
+    ];
+
+    const addresses = [];
+    for (let i = 0; i < polls.length; i++) {
+      console.log(`Deploying poll ${i + 1}/${polls.length}: ${polls[i].title}...`);
+      const deployed = await deployContract(providers, {
+          compiledContract: CompiledVotingContractContract,
+          args: [polls[i].title, polls[i].labels, 4n, emptyRoot]
+      });
+      const contractAddress = deployed.deployTxData.public.contractAddress;
+      addresses.push(contractAddress);
+      console.log(`Poll ${i + 1} Deployed! Address: ${contractAddress}`);
+    }
     
-    const contractAddress = deployed.deployTxData.public.contractAddress;
     console.log("================================================================================");
-    console.log("🎉 SUCCESS! CONTRACT DEPLOYED TO PREPROD!");
-    console.log("CONTRACT_ADDRESS=" + contractAddress);
-    console.log("Contract Address:", contractAddress);
-    console.log("Explorer:", `https://preprod.midnight.network/contract/${contractAddress}`);
+    console.log("🎉 SUCCESS! ALL CONTRACTS DEPLOYED TO PREPROD!");
+    console.log("CONTRACT_ADDRESSES=" + addresses.join(","));
     console.log("================================================================================");
 
     const deploymentInfo = {
       network: "preprod",
-      contractAddress,
-      explorerUrl: `https://preprod.midnight.network/contract/${contractAddress}`,
+      contractAddresses: addresses,
       indexer: envConfiguration.indexer,
       node: envConfiguration.node,
       deployedAt: new Date().toISOString(),

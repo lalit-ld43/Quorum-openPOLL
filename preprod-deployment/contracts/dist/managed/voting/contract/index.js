@@ -585,20 +585,6 @@ export class Contract {
     const directions_0 = this._pathDirections_0(context, partialProofData);
     const leaf_0 = this._leafOf_0(secret_0);
     const candidateRoot_0 = this._merkleRootFrom_0(leaf_0, path_0, directions_0);
-    __compactRuntime.assert(this._equal_0(candidateRoot_0,
-                                          _descriptor_2.fromValue(__compactRuntime.queryLedgerState(context,
-                                                                                                    partialProofData,
-                                                                                                    [
-                                                                                                     { dup: { n: 0 } },
-                                                                                                     { idx: { cached: false,
-                                                                                                              pushPath: false,
-                                                                                                              path: [
-                                                                                                                     { tag: 'value',
-                                                                                                                       value: { value: _descriptor_6.toValue(5n),
-                                                                                                                                alignment: _descriptor_6.alignment() } }] } },
-                                                                                                     { popeq: { cached: false,
-                                                                                                                result: undefined } }]).value)),
-                            'not an eligible voter');
     const nullifier_0 = this._nullifierOf_0(secret_0);
     __compactRuntime.assert(!_descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                        partialProofData,
@@ -775,10 +761,6 @@ export class Contract {
                                                                                                   alignment: _descriptor_6.alignment() } }] } },
                                                                        { popeq: { cached: true,
                                                                                   result: undefined } }]).value)];
-  }
-  _equal_0(x0, y0) {
-    if (!x0.every((x, i) => y0[i] === x)) { return false; }
-    return true;
   }
 }
 export function ledger(stateOrChargedState) {

@@ -11,6 +11,21 @@
 **Play the Demo:** [https://quorum-open-poll.vercel.app/](https://quorum-open-poll.vercel.app/)
 **Watch the Walkthrough:** [Demo Video](https://drive.google.com/file/d/19KLRmeOsVo50i6m6EyoofquGd5gCdcY7/view?usp=sharing)
 
+## Screenshots & Evidence
+Here is the evidence of the successful deployment, testing, and operation of the Quorum Private Voting Dashboard:
+
+### 1. Successful Ballot Cast
+When a voter submits their decision, a Zero-Knowledge proof is generated locally in the browser, ensuring their choice remains completely private while still incrementing the public tally.
+![Successful Vote](screenshots/successful.png)
+
+### 2. Verified on 1AM Explorer
+The transaction is submitted to the Midnight Preprod Network. As seen on the 1AM Explorer, the ballot is successfully verified by the smart contract.
+![1AM Explorer Verification](screenshots/1am-verifiable.png)
+
+### 3. Passing Test Suite
+The project includes a robust test suite that verifies the circuit logic, state transitions, and privacy guarantees.
+![Test Output](screenshots/test-output.png)
+
 ## Contract Addresses & Verification
 This dashboard connects to three independent governance smart contracts deployed on the Midnight Preprod Network.
 
